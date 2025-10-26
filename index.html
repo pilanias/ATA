@@ -13,28 +13,48 @@
   <link rel="stylesheet" href="style.css"> 
   
   <style>
-    /* Add a fallback for your custom 'text-white-text' if it's not in style.css */
-    .text-white-text {
-        color: #f0f0f0; /* Example white-ish color */
+    :root {
+      --bg-primary: #0A0A10;    /* Very dark background */
+      --bg-secondary: #141418;  /* Card background */
+      --border-color: #282830; /* Subtle borders */
+      --text-primary: #F0F0F5;   /* Main text */
+      --text-secondary: #888890;/* Muted text */
+      --accent: #00E0FF;        /* Electric Cyan */
+      --accent-hover: #33E8FF;
+      --error: #FF4057;         /* Bright red for errors */
+    }
+    
+    /* Custom scrollbar for a modern feel (optional) */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
     }
   </style>
+  </head>
 
-</head>
+<body class="font-outfit bg-[var(--bg-primary)] text-[var(--text-primary)]">
 
-<body class="font-outfit bg-[#090314]">
-
-  <main class="flex min-w-screen min-h-screen flex-col items-center gap-4 p-4 sm:p-8">
-    <div class="w-full max-w-7xl mx-auto" id="pubkey">
+  <main class="flex min-w-screen min-h-screen flex-col items-center gap-6 p-4 sm:p-8">
+    <div class="w-full max-w-6xl mx-auto" id="pubkey">
       <div class="w-full relative" id="assets">
         
-        <div class="rounded-lg bg-[#121026] text-card-foreground shadow-sm p-4 sm:p-6 mb-8 w-full">
+        <div class="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 sm:p-6 mb-6 w-full">
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             <div class="grid gap-1 text-sm">
               <div id="after_connection">
                 <button type="button" id="connect-wallet"
-                  class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transition-colors duration-200">
+                  class="w-full bg-[var(--accent)] text-black font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-colors duration-200 hover:bg-[var(--accent-hover)]">
                   Connect Wallet
                 </button>
               </div>
@@ -44,7 +64,7 @@
               <span id="fee_payer_container" class="w-full">
                 <div id="fee_payer_input_container">
                   <input type="password"
-                    class="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    class="bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-full p-2.5 placeholder:text-[var(--text-secondary)]"
                     id="fee-payer-key" placeholder="Fee payer private key (Optional)">
                 </div>
                 <div id="fee_payer_display_container" class="items-center" style="display: none; height: 42px;">
@@ -56,7 +76,7 @@
               <span id="des_Address_container" class="w-full">
                 <div id="des_Address_input_container">
                   <input type="text"
-                    class="bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    class="bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-full p-2.5 placeholder:text-[var(--text-secondary)]"
                     id="destination-address" placeholder="Destination Address (Optional)">
                 </div>
                 <div id="des_Address_display_container" class="items-center" style="display: none; height: 42px;">
@@ -65,51 +85,52 @@
             </div>
           </div>
 
-          <div id="status-message" class="text-gray-400 h-10 p-2 rounded-md transition-colors duration-200">
+          <div id="status-message" class="text-[var(--text-secondary)] h-10 p-2 rounded-md transition-colors duration-200 mt-4 text-center text-sm">
             Please connect your wallet.
           </div>
 
         </div>
 
         <form id="form" class="w-full">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            <div class="bg-[#121026] rounded-lg p-4 sm:p-6 shadow-lg">
+            <div class="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] p-4 sm:p-6 shadow-lg">
               
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
                 <div>
-                  <h3 class="text-2xl text-white font-semibold">
-                    <span class="text-purple-500 font-bold">Token </span>Account
+                  <h3 class="text-2xl text-[var(--text-primary)] font-semibold">
+                    <span class="text-[var(--accent)] font-bold">Token </span>Accounts
                   </h3>
                 </div>
                 <div class="w-full sm:w-auto">
                   <button type="button"
-                    class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 drop-shadow-lg text-white font-bold py-2 px-5 rounded-lg transition-colors duration-200"
+                    class="w-full sm:w-auto bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-black font-semibold py-2 px-5 rounded-lg transition-colors duration-200"
                     id="burn-close-btn">
                     Burn & Close Selected
                   </button>
                 </div>
               </div>
 
-              <div class="flex items-center gap-3 p-2 mb-2 text-gray-300 border-b border-gray-700">
+              <div class="flex items-center gap-3 p-3 mb-2 text-[var(--text-primary)] border-b border-t border-[var(--border-color)]">
                 <input type="checkbox" id="select-all-checkbox"
-                  class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2">
-                <label for="select-all-checkbox" class="font-medium">Select All</label>
+                  class="w-4 h-4 text-[var(--accent)] bg-[var(--bg-primary)] border-[var(--border-color)] rounded focus:ring-[var(--accent)] focus:ring-2">
+                <label for="select-all-checkbox" class="font-medium text-sm">Select All</label>
               </div>
 
-              <div id="tokens-to-burn-container" class="grid gap-2">
-                <ul id="token-list" class="text-gray-300 space-y-2">
-                  <p>Please connect your wallet to see your tokens.</p>
+              <div id="tokens-to-burn-container" class="grid gap-2 max-h-[60vh] overflow-y-auto">
+                <ul id="token-list" class="text-[var(--text-secondary)] space-y-1">
+                  <p class="p-4 text-center">Please connect your wallet to see your tokens.</p>
                 </ul>
               </div>
             </div>
 
-            <div class="bg-[#121026] rounded-lg p-4 sm:p-6 shadow-lg">
-              <h3 class="text-2xl text-white font-semibold mb-4">
-                <span class="text-gray-500 font-bold">Excluded </span>Accounts
+            <div class="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] p-4 sm:p-6 shadow-lg">
+              <h3 class="text-2xl text-[var(--text-primary)] font-semibold mb-4">
+                <span class="text-[var(--text-secondary)] font-bold">Excluded </span>Accounts
               </h3>
-              <ul id="excluded-list" class="text-gray-400 space-y-4" style="display: block;">
-                </ul>
+              <ul id="excluded-list" class="text-[var(--text-secondary)] space-y-4 max-h-[70vh] overflow-y-auto" style="display: block;">
+                <p class="p-4 text-center">No excluded accounts found yet.</p>
+              </ul>
             </div>
 
           </div>
