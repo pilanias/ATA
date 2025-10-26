@@ -36,12 +36,11 @@ async function connectWallet(eagerly = false) {
     // --- UI UPDATE --- (Using new Tailwind classes)
     document.getElementById('after_connection').innerHTML = `
       <button type="button" id="connect-wallet"
-              class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transition-colors duration-200">
+              class="w-full bg-[var(--accent)] text-black font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-colors duration-200 hover:bg-[var(--accent-hover)]">
               Connected: ${truncatedAddress}
       </button>
     `;
 
-    // Fetch ATAs and display them
     await fetchAndDisplayATATokens();
   } catch (err) {
     if (eagerly) {
@@ -62,7 +61,7 @@ async function fetchAndDisplayATATokens() {
   }
 
   const tokenList = document.getElementById('token-list');
-  tokenList.innerHTML = '<p>Loading tokens...</p>';
+  tokenList.innerHTML = '<p class="p-4 text-center">Loading tokens...</p>';
   updateStatus('Fetching tokens...');
 
   try {
@@ -89,10 +88,11 @@ async function fetchAndDisplayATATokens() {
     displayExcludedTokens(nfts, frozenTokens);
     updateStatus('Tokens loaded. Select tokens to burn.');
 
-  } catch (err) {
+  } catch (err)
+ {
     console.error('Error fetching tokens:', err);
     updateStatus('Error fetching tokens.', true);
-    tokenList.innerHTML = '<p class="text-red-500">Error fetching tokens.</p>';
+    tokenList.innerHTML = '<p class="p-4 text-center text-[var(--error)]">Error fetching tokens.</p>';
   }
 }
 
@@ -104,11 +104,8 @@ async function fetchTokenMetadataFromOnChain(mintAddress) {
     const metadataAccount = await Metadata.load(connection, metadataPDA);
     const metadataUri = metadataAccount.data.data.uri.replace(/\0/g, ''); // Clean null chars
 
-    if (!metadataUri) {
-        return null;
-    }
+    if (!metadataUri) return null;
     
-    // Fix IPFS links
     let fetchUri = metadataUri.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/');
 
     if (!fetchUri.startsWith('http')) {
@@ -130,16 +127,16 @@ async function fetchTokenMetadataFromOnChain(mintAddress) {
     };
   } catch (err) {
     console.error(`Error fetching on-chain metadata for ${mintAddress}:`, err);
-    return null; // Return null on failure so Promise.all doesn't break
+    return null;
   }
 }
 
 function displayTokens(tokens, metadataList) {
   const tokenList = document.getElementById('token-list');
-  tokenList.innerHTML = ''; // Clear existing list
+  tokenList.innerHTML = ''; 
 
   if (tokens.length === 0) {
-      tokenList.innerHTML = '<p>No burnable SPL tokens found.</p>';
+      tokenList.innerHTML = '<p class="p-4 text-center">No burnable SPL tokens found.</p>';
       return;
   }
 
@@ -148,15 +145,15 @@ function displayTokens(tokens, metadataList) {
     const metadata = metadataList[i];
 
     const tokenItem = document.createElement('li');
-    // --- UI UPDATE --- (Using new Tailwind classes)
+    // --- UI UPDATE --- (New card styling for each token)
     const tokenName = metadata ? metadata.name : `Unknown (${token.mint.slice(0, 4)}...)`;
     const tokenSymbol = metadata ? metadata.symbol : 'N/A';
     const tokenLogo = metadata && metadata.image ? metadata.image : '';
 
     tokenItem.innerHTML = `
-      <div class="cursor-pointer bg-[#090314] p-3 rounded-md flex items-center justify-between hover:bg-gray-800 transition-colors duration-150">
-        <div class="flex items-center gap-4">
-          <input type="checkbox" class="token-checkbox w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2" 
+      <div class="cursor-pointer p-3 rounded-lg flex items-center justify-between hover:bg-[var(--bg-primary)] transition-colors duration-150 border-b border-[var(--border-color)]">
+        <div class="flex items-center gap-4 flex-1 min-w-0">
+          <input type="checkbox" class="token-checkbox w-4 h-4 text-[var(--accent)] bg-[var(--bg-primary)] border-[var(--border-color)] rounded focus:ring-[var(--accent)] focus:ring-2 flex-shrink-0" 
                  data-mint="${token.mint}" 
                  data-ata="${token.tokenAccount}" 
                  data-amount="${token.amount}" 
@@ -165,15 +162,17 @@ function displayTokens(tokens, metadataList) {
           <div class="h-10 w-10 flex-shrink-0">
             ${tokenLogo ? 
               `<img class="rounded-full" alt="${tokenName} logo" width="40" height="40" src="${tokenLogo}" style="aspect-ratio: 40 / 40; object-fit: cover;">` : 
-              '<div class="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-white">?</div>'}
+              `<div class="h-10 w-10 rounded-full bg-[var(--bg-primary)] border border-[var(--border-color)] flex items-center justify-center font-bold text-[var(--text-secondary)]">?</div>`}
           </div>
-          <div class="truncate">
-            <h4 class="font-semibold text-white truncate">${tokenName}</h4>
-            <p class="text-sm text-gray-400">${tokenSymbol}</p>
+          
+          <div class="flex-1 min-w-0">
+            <h4 class="font-semibold text-[var(--text-primary)] truncate" title="${tokenName}">${tokenName}</h4>
+            <p class="text-sm text-[var(--text-secondary)]">${tokenSymbol}</p>
           </div>
         </div>
-        <div class="flex flex-col items-end flex-shrink-0 ml-2">
-          <p class="text-sm text-white">${token.amount / Math.pow(10, token.decimals)}</p>
+        
+        <div class="flex flex-col items-end flex-shrink-0 ml-4">
+          <p class="text-sm font-medium text-[var(--text-primary)]">${token.amount / Math.pow(10, token.decimals)}</p>
         </div>
       </div>
     `;
@@ -183,16 +182,17 @@ function displayTokens(tokens, metadataList) {
 
 function displayExcludedTokens(nfts, frozenTokens) {
   const excludedList = document.getElementById('excluded-list');
-  excludedList.innerHTML = ''; // Clear existing list
+  excludedList.innerHTML = ''; 
 
   if (nfts.length > 0) {
     const nftSection = document.createElement('div');
-    // --- UI UPDATE --- (Using new Tailwind classes)
-    nftSection.innerHTML = '<h3 class="text-lg font-semibold text-white mb-2">NFTs</h3>';
+    // --- UI UPDATE ---
+    nftSection.innerHTML = '<h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">NFTs</h3>';
     const nftList = document.createElement('ul');
-    nftList.className = 'space-y-1 list-disc list-inside';
+    nftList.className = 'space-y-2';
     nfts.forEach(nft => {
       const nftItem = document.createElement('li');
+      nftItem.className = "text-sm p-2 bg-[var(--bg-primary)] rounded-md border border-[var(--border-color)]"
       nftItem.innerHTML = `NFT (Mint: ${nft.mint.slice(0, 4)}...${nft.mint.slice(-4)})`;
       nftList.appendChild(nftItem);
     });
@@ -202,12 +202,13 @@ function displayExcludedTokens(nfts, frozenTokens) {
 
   if (frozenTokens.length > 0) {
     const frozenSection = document.createElement('div');
-    // --- UI UPDATE --- (Using new Tailwind classes)
-    frozenSection.innerHTML = '<h3 class="text-lg font-semibold text-white mt-4 mb-2">Frozen Tokens</h3>';
+    // --- UI UPDATE ---
+    frozenSection.innerHTML = '<h3 class="text-lg font-semibold text-[var(--text-primary)] mt-4 mb-2">Frozen Tokens</h3>';
     const frozenList = document.createElement('ul');
-    frozenList.className = 'space-y-1 list-disc list-inside';
+    frozenList.className = 'space-y-2';
     frozenTokens.forEach(token => {
       const frozenItem = document.createElement('li');
+      frozenItem.className = "text-sm p-2 bg-[var(--bg-primary)] rounded-md border border-[var(--border-color)]"
       frozenItem.innerHTML = `Frozen (Mint: ${token.mint.slice(0, 4)}...${token.mint.slice(-4)}, Amount: ${token.amount / Math.pow(10, token.decimals)})`;
       frozenList.appendChild(frozenItem);
     });
@@ -216,7 +217,7 @@ function displayExcludedTokens(nfts, frozenTokens) {
   }
 
   if (nfts.length === 0 && frozenTokens.length === 0) {
-      excludedList.innerHTML = '<p>No excluded accounts (NFTs or Frozen) found.</p>';
+      excludedList.innerHTML = '<p class="p-4 text-center">No excluded accounts (NFTs or Frozen) found.</p>';
   }
 }
 
@@ -229,12 +230,12 @@ function setDestinationAddress(address) {
 
     const desAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
     
-    // --- UI UPDATE --- (Using new Tailwind classes)
+    // --- UI UPDATE --- (New "Change" button style)
     document.getElementById('des_Address_display_container').innerHTML = `
-      <div class="flex gap-2 items-center justify-between w-full bg-gray-800 p-2.5 rounded-lg h-[42px]">
-        <span class="text-gray-300 text-sm">Dest: ${desAddress}</span>
+      <div class="flex gap-2 items-center justify-between w-full bg-[var(--bg-primary)] border border-[var(--border-color)] p-2.5 rounded-lg h-[42px]">
+        <span class="text-[var(--text-secondary)] text-sm">Dest: <span class="text-[var(--text-primary)] font-medium">${desAddress}</span></span>
         <button type="button" id="change-destination" 
-          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150">
+          class="border border-[var(--accent)] text-[var(--accent)] font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150 hover:bg-[var(--accent)] hover:text-black">
           Change
         </button>
       </div>
@@ -256,12 +257,12 @@ function setFeePayer(privateKey) {
     
     const feepayerAddress = `${pubkeyStr.slice(0, 4)}...${pubkeyStr.slice(-4)}`;
 
-    // --- UI UPDATE --- (Using new Tailwind classes)
+    // --- UI UPDATE --- (New "Change" button style)
     document.getElementById('fee_payer_display_container').innerHTML = `
-      <div class="flex gap-2 items-center justify-between w-full bg-gray-800 p-2.5 rounded-lg h-[42px]">
-        <span class="text-gray-300 text-sm">Fee: ${feepayerAddress}</span>
+      <div class="flex gap-2 items-center justify-between w-full bg-[var(--bg-primary)] border border-[var(--border-color)] p-2.5 rounded-lg h-[42px]">
+        <span class="text-[var(--text-secondary)] text-sm">Fee: <span class="text-[var(--text-primary)] font-medium">${feepayerAddress}</span></span>
         <button type="button" id="change-fee-payer" 
-          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150">
+          class="border border-[var(--accent)] text-[var(--accent)] font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150 hover:bg-[var(--accent)] hover:text-black">
           Change
         </button>
       </div>
@@ -277,10 +278,10 @@ function setFeePayer(privateKey) {
 function updateStatus(message, isError = false) {
     const statusEl = document.getElementById('status-message');
     statusEl.innerText = message;
-    // --- UI UPDATE --- (Using new Tailwind classes)
+    // --- UI UPDATE --- (Using new CSS variables for color)
     statusEl.className = isError ? 
-      'text-red-400 font-medium p-2 rounded-md h-10 transition-colors duration-200' : 
-      'text-green-400 font-medium p-2 rounded-md h-10 transition-colors duration-200';
+      'text-[var(--error)] font-medium p-2 rounded-md h-10 transition-colors duration-200 text-center text-sm' : 
+      'text-[var(--accent)] font-medium p-2 rounded-md h-10 transition-colors duration-200 text-center text-sm';
 }
 
 // --- Transaction Logic (Unchanged) ---
@@ -461,15 +462,19 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
 // --- Event Listeners (Unchanged) ---
 
 document.addEventListener('click', (event) => {
-    if (event.target.id === 'connect-wallet') {
+    // Find the closest ancestor with an ID, in case the user clicks an icon/text inside a button
+    const target = event.target.closest('[id]');
+    if (!target) return;
+
+    if (target.id === 'connect-wallet') {
         connectWallet();
     }
     
-    if (event.target.id === 'burn-close-btn') {
+    if (target.id === 'burn-close-btn') {
         burnAndCloseTokensInBatches();
     }
 
-    if (event.target.id === 'change-fee-payer') {
+    if (target.id === 'change-fee-payer') {
         feePayerKeypair = null; 
         document.getElementById('fee_payer_display_container').style.display = 'none';
         document.getElementById('fee_payer_input_container').style.display = 'block';
@@ -477,7 +482,7 @@ document.addEventListener('click', (event) => {
         console.log('Fee payer cleared.');
     }
 
-    if (event.target.id === 'change-destination') {
+    if (target.id === 'change-destination') {
         destinationAddress = null; 
         document.getElementById('des_Address_display_container').style.display = 'none';
         document.getElementById('des_Address_input_container').style.display = 'block';
