@@ -33,7 +33,6 @@ async function connectWallet(eagerly = false) {
     const publicKeyString = walletPublicKey.toString();
     const truncatedAddress = `${publicKeyString.slice(0, 4)}...${publicKeyString.slice(-4)}`;
 
-    // --- UI UPDATE --- (Using new Tailwind classes)
     document.getElementById('after_connection').innerHTML = `
       <button type="button" id="connect-wallet"
               class="w-full bg-[var(--accent)] text-black font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-colors duration-200 hover:bg-[var(--accent-hover)]">
@@ -52,7 +51,7 @@ async function connectWallet(eagerly = false) {
   }
 }
 
-// --- Token Fetching and Display ---
+// --- Token Fetching and Display (Unchanged) ---
 
 async function fetchAndDisplayATATokens() {
   if (!walletPublicKey) {
@@ -145,7 +144,6 @@ function displayTokens(tokens, metadataList) {
     const metadata = metadataList[i];
 
     const tokenItem = document.createElement('li');
-    // --- UI UPDATE --- (New card styling for each token)
     const tokenName = metadata ? metadata.name : `Unknown (${token.mint.slice(0, 4)}...)`;
     const tokenSymbol = metadata ? metadata.symbol : 'N/A';
     const tokenLogo = metadata && metadata.image ? metadata.image : '';
@@ -186,7 +184,6 @@ function displayExcludedTokens(nfts, frozenTokens) {
 
   if (nfts.length > 0) {
     const nftSection = document.createElement('div');
-    // --- UI UPDATE ---
     nftSection.innerHTML = '<h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">NFTs</h3>';
     const nftList = document.createElement('ul');
     nftList.className = 'space-y-2';
@@ -202,7 +199,6 @@ function displayExcludedTokens(nfts, frozenTokens) {
 
   if (frozenTokens.length > 0) {
     const frozenSection = document.createElement('div');
-    // --- UI UPDATE ---
     frozenSection.innerHTML = '<h3 class="text-lg font-semibold text-[var(--text-primary)] mt-4 mb-2">Frozen Tokens</h3>';
     const frozenList = document.createElement('ul');
     frozenList.className = 'space-y-2';
@@ -230,12 +226,12 @@ function setDestinationAddress(address) {
 
     const desAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
     
-    // --- UI UPDATE --- (New "Change" button style)
+    // --- UI UPDATE --- (Matches new p-4 input size and uses --error for button)
     document.getElementById('des_Address_display_container').innerHTML = `
-      <div class="flex gap-2 items-center justify-between w-full bg-[var(--bg-primary)] border border-[var(--border-color)] p-2.5 rounded-lg h-[42px]">
-        <span class="text-[var(--text-secondary)] text-sm">Dest: <span class="text-[var(--text-primary)] font-medium">${desAddress}</span></span>
+      <div class="flex gap-2 items-center justify-between w-full bg-[var(--bg-primary)] border border-[var(--border-color)] p-4 rounded-lg">
+        <span class="text-[var(--text-secondary)] text-base">Dest: <span class="text-[var(--text-primary)] font-medium">${desAddress}</span></span>
         <button type="button" id="change-destination" 
-          class="border border-[var(--accent)] text-[var(--accent)] font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150 hover:bg-[var(--accent)] hover:text-black">
+          class="border border-[var(--error)] text-[var(--error)] font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150 hover:bg-[var(--error)] hover:text-black flex-shrink-0">
           Change
         </button>
       </div>
@@ -257,12 +253,12 @@ function setFeePayer(privateKey) {
     
     const feepayerAddress = `${pubkeyStr.slice(0, 4)}...${pubkeyStr.slice(-4)}`;
 
-    // --- UI UPDATE --- (New "Change" button style)
+    // --- UI UPDATE --- (Matches new p-4 input size and uses --error for button)
     document.getElementById('fee_payer_display_container').innerHTML = `
-      <div class="flex gap-2 items-center justify-between w-full bg-[var(--bg-primary)] border border-[var(--border-color)] p-2.5 rounded-lg h-[42px]">
-        <span class="text-[var(--text-secondary)] text-sm">Fee: <span class="text-[var(--text-primary)] font-medium">${feepayerAddress}</span></span>
+      <div class="flex gap-2 items-center justify-between w-full bg-[var(--bg-primary)] border border-[var(--border-color)] p-4 rounded-lg">
+        <span class="text-[var(--text-secondary)] text-base">Fee: <span class="text-[var(--text-primary)] font-medium">${feepayerAddress}</span></span>
         <button type="button" id="change-fee-payer" 
-          class="border border-[var(--accent)] text-[var(--accent)] font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150 hover:bg-[var(--accent)] hover:text-black">
+          class="border border-[var(--error)] text-[var(--error)] font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150 hover:bg-[var(--error)] hover:text-black flex-shrink-0">
           Change
         </button>
       </div>
@@ -278,7 +274,6 @@ function setFeePayer(privateKey) {
 function updateStatus(message, isError = false) {
     const statusEl = document.getElementById('status-message');
     statusEl.innerText = message;
-    // --- UI UPDATE --- (Using new CSS variables for color)
     statusEl.className = isError ? 
       'text-[var(--error)] font-medium p-2 rounded-md h-10 transition-colors duration-200 text-center text-sm' : 
       'text-[var(--accent)] font-medium p-2 rounded-md h-10 transition-colors duration-200 text-center text-sm';
@@ -384,6 +379,9 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
   const batchSize = Math.min(transactionBatches.length, rpsLimit);
   let successCount = 0;
   let errorCount = 0;
+  const burnBtn = document.getElementById('burn-close-btn');
+  burnBtn.disabled = true;
+  burnBtn.innerText = "Processing...";
 
   for (let i = 0; i < transactionBatches.length; i += batchSize) {
     const currentBatch = transactionBatches.slice(i, i + batchSize);
@@ -451,6 +449,10 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
     }
   }
 
+  // Re-enable button
+  burnBtn.disabled = false;
+  burnBtn.innerText = "Burn & Close Selected";
+
   if (successCount > 0) {
       updateStatus(`Process finished: ${successCount} tx(s) successful, ${errorCount} failed.`, errorCount > 0);
       await fetchAndDisplayATATokens();
@@ -462,7 +464,6 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
 // --- Event Listeners (Unchanged) ---
 
 document.addEventListener('click', (event) => {
-    // Find the closest ancestor with an ID, in case the user clicks an icon/text inside a button
     const target = event.target.closest('[id]');
     if (!target) return;
 
