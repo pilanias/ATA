@@ -33,9 +33,12 @@ async function connectWallet(eagerly = false) {
     const publicKeyString = walletPublicKey.toString();
     const truncatedAddress = `${publicKeyString.slice(0, 4)}...${publicKeyString.slice(-4)}`;
 
+    // --- UI UPDATE --- (Using new Tailwind classes)
     document.getElementById('after_connection').innerHTML = `
       <button type="button" id="connect-wallet"
-              class="uk-button   uk-width-1-1 uk-button-primary drop-shadow-lg text-white-text font-bold ">${truncatedAddress}</button>
+              class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transition-colors duration-200">
+              Connected: ${truncatedAddress}
+      </button>
     `;
 
     // Fetch ATAs and display them
@@ -72,7 +75,6 @@ async function fetchAndDisplayATATokens() {
         amount: account.account.data.parsed.info.tokenAmount.amount,
         decimals: account.account.data.parsed.info.tokenAmount.decimals,
         isFrozen: account.account.data.parsed.info.state === "frozen",
-        // More accurate NFT check
         isNFT: account.account.data.parsed.info.tokenAmount.decimals === 0 && account.account.data.parsed.info.tokenAmount.amount === "1"
       }));
 
@@ -80,16 +82,12 @@ async function fetchAndDisplayATATokens() {
     const nfts = fetchedTokens.filter(token => token.isNFT);
     const frozenTokens = fetchedTokens.filter(token => token.isFrozen);
 
-    // Fetch metadata for all SPL tokens in parallel
     const metadataPromises = splTokens.map(token => fetchTokenMetadataFromOnChain(token.mint));
     const metadataList = await Promise.all(metadataPromises);
 
-    // Display tokens with fetched metadata
     displayTokens(splTokens, metadataList);
-
-    // Display NFTs and frozen tokens
     displayExcludedTokens(nfts, frozenTokens);
-    updateStatus('Tokens loaded.');
+    updateStatus('Tokens loaded. Select tokens to burn.');
 
   } catch (err) {
     console.error('Error fetching tokens:', err);
@@ -104,26 +102,31 @@ async function fetchTokenMetadataFromOnChain(mintAddress) {
   try {
     const metadataPDA = await Metadata.getPDA(new PublicKey(mintAddress));
     const metadataAccount = await Metadata.load(connection, metadataPDA);
-    const metadataUri = metadataAccount.data.data.uri;
+    const metadataUri = metadataAccount.data.data.uri.replace(/\0/g, ''); // Clean null chars
 
-    // Handle potential URI issues (e.g., empty or non-standard)
-    if (!metadataUri || !metadataUri.startsWith('http')) {
-        // Try to fix common issues, like missing protocol
-        let fixedUri = metadataUri.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/');
-        // If still not http, we can't fetch it client-side
-        if (!fixedUri.startsWith('http')) {
-             console.warn(`Cannot fetch metadata from URI: ${metadataUri}`);
-             return null;
-        }
+    if (!metadataUri) {
+        return null;
+    }
+    
+    // Fix IPFS links
+    let fetchUri = metadataUri.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/');
+
+    if (!fetchUri.startsWith('http')) {
+        console.warn(`Cannot fetch metadata from URI: ${fetchUri}`);
+        return null;
     }
 
-    const metadataResponse = await fetch(metadataUri.replace(/\0/g, '')); // Remove null chars
+    const metadataResponse = await fetch(fetchUri);
+    if (!metadataResponse.ok) {
+        console.warn(`Failed to fetch metadata from ${fetchUri}`);
+        return null;
+    }
     const metadata = await metadataResponse.json();
 
     return {
       name: metadata.name,
       symbol: metadata.symbol,
-      image: metadata.image
+      image: metadata.image ? metadata.image.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/') : null
     };
   } catch (err) {
     console.error(`Error fetching on-chain metadata for ${mintAddress}:`, err);
@@ -145,29 +148,32 @@ function displayTokens(tokens, metadataList) {
     const metadata = metadataList[i];
 
     const tokenItem = document.createElement('li');
+    // --- UI UPDATE --- (Using new Tailwind classes)
     const tokenName = metadata ? metadata.name : `Unknown (${token.mint.slice(0, 4)}...)`;
     const tokenSymbol = metadata ? metadata.symbol : 'N/A';
     const tokenLogo = metadata && metadata.image ? metadata.image : '';
 
     tokenItem.innerHTML = `
-      <div class="cursor-pointer bg-[#090314] p-3 rounded-md flex items-center justify-between">
+      <div class="cursor-pointer bg-[#090314] p-3 rounded-md flex items-center justify-between hover:bg-gray-800 transition-colors duration-150">
         <div class="flex items-center gap-4">
-          <input type="checkbox" class="uk-checkbox token-checkbox" 
+          <input type="checkbox" class="token-checkbox w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2" 
                  data-mint="${token.mint}" 
                  data-ata="${token.tokenAccount}" 
                  data-amount="${token.amount}" 
                  data-decimals="${token.decimals}">
 
-          <div class="h-[40px] w-[40px]">
-            ${tokenLogo ? `<img class="rounded-md" alt="${tokenName} logo" width="40" height="40" src="${tokenLogo}" style="aspect-ratio: 40 / 40; object-fit: cover;">` : '<div class="h-[40px] w-[40px] rounded-md bg-gray-700"></div>'}
+          <div class="h-10 w-10 flex-shrink-0">
+            ${tokenLogo ? 
+              `<img class="rounded-full" alt="${tokenName} logo" width="40" height="40" src="${tokenLogo}" style="aspect-ratio: 40 / 40; object-fit: cover;">` : 
+              '<div class="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-white">?</div>'}
           </div>
-          <div>
-            <h4 class="font-semibold text-white-text">${tokenName}</h4>
+          <div class="truncate">
+            <h4 class="font-semibold text-white truncate">${tokenName}</h4>
             <p class="text-sm text-gray-400">${tokenSymbol}</p>
           </div>
         </div>
-        <div class="flex flex-col items-end">
-          <p class="text-sm  text-white-text">Amount: ${token.amount / Math.pow(10, token.decimals)}</p>
+        <div class="flex flex-col items-end flex-shrink-0 ml-2">
+          <p class="text-sm text-white">${token.amount / Math.pow(10, token.decimals)}</p>
         </div>
       </div>
     `;
@@ -181,23 +187,31 @@ function displayExcludedTokens(nfts, frozenTokens) {
 
   if (nfts.length > 0) {
     const nftSection = document.createElement('div');
-    nftSection.innerHTML = '<h3 class="text-lg font-semibold text-white-text mb-2">NFTs</h3>';
+    // --- UI UPDATE --- (Using new Tailwind classes)
+    nftSection.innerHTML = '<h3 class="text-lg font-semibold text-white mb-2">NFTs</h3>';
+    const nftList = document.createElement('ul');
+    nftList.className = 'space-y-1 list-disc list-inside';
     nfts.forEach(nft => {
       const nftItem = document.createElement('li');
       nftItem.innerHTML = `NFT (Mint: ${nft.mint.slice(0, 4)}...${nft.mint.slice(-4)})`;
-      nftSection.appendChild(nftItem);
+      nftList.appendChild(nftItem);
     });
+    nftSection.appendChild(nftList);
     excludedList.appendChild(nftSection);
   }
 
   if (frozenTokens.length > 0) {
     const frozenSection = document.createElement('div');
-    frozenSection.innerHTML = '<h3 class="text-lg font-semibold text-white-text mt-4 mb-2">Frozen Tokens</h3>';
+    // --- UI UPDATE --- (Using new Tailwind classes)
+    frozenSection.innerHTML = '<h3 class="text-lg font-semibold text-white mt-4 mb-2">Frozen Tokens</h3>';
+    const frozenList = document.createElement('ul');
+    frozenList.className = 'space-y-1 list-disc list-inside';
     frozenTokens.forEach(token => {
       const frozenItem = document.createElement('li');
       frozenItem.innerHTML = `Frozen (Mint: ${token.mint.slice(0, 4)}...${token.mint.slice(-4)}, Amount: ${token.amount / Math.pow(10, token.decimals)})`;
-      frozenSection.appendChild(frozenItem);
+      frozenList.appendChild(frozenItem);
     });
+    frozenSection.appendChild(frozenList);
     excludedList.appendChild(frozenSection);
   }
 
@@ -215,10 +229,14 @@ function setDestinationAddress(address) {
 
     const desAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
     
+    // --- UI UPDATE --- (Using new Tailwind classes)
     document.getElementById('des_Address_display_container').innerHTML = `
-      <div style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-        <span class="text-white-text text-sm">Dest: ${desAddress}</span>
-        <button type="button" id="change-destination" class="uk-button uk-button-danger uk-button-small">Change</button>
+      <div class="flex gap-2 items-center justify-between w-full bg-gray-800 p-2.5 rounded-lg h-[42px]">
+        <span class="text-gray-300 text-sm">Dest: ${desAddress}</span>
+        <button type="button" id="change-destination" 
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150">
+          Change
+        </button>
       </div>
     `;
     document.getElementById('des_Address_display_container').style.display = 'flex';
@@ -238,10 +256,14 @@ function setFeePayer(privateKey) {
     
     const feepayerAddress = `${pubkeyStr.slice(0, 4)}...${pubkeyStr.slice(-4)}`;
 
+    // --- UI UPDATE --- (Using new Tailwind classes)
     document.getElementById('fee_payer_display_container').innerHTML = `
-      <div style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-        <span class="text-white-text text-sm">Fee: ${feepayerAddress}</span>
-        <button type="button" id="change-fee-payer" class="uk-button uk-button-danger uk-button-small">Change</button>
+      <div class="flex gap-2 items-center justify-between w-full bg-gray-800 p-2.5 rounded-lg h-[42px]">
+        <span class="text-gray-300 text-sm">Fee: ${feepayerAddress}</span>
+        <button type="button" id="change-fee-payer" 
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition-colors duration-150">
+          Change
+        </button>
       </div>
     `;
     document.getElementById('fee_payer_display_container').style.display = 'flex';
@@ -255,10 +277,13 @@ function setFeePayer(privateKey) {
 function updateStatus(message, isError = false) {
     const statusEl = document.getElementById('status-message');
     statusEl.innerText = message;
-    statusEl.className = isError ? 'text-red-500 p-2 rounded-md h-[36px]' : 'text-green-500 p-2 rounded-md h-[36px]';
+    // --- UI UPDATE --- (Using new Tailwind classes)
+    statusEl.className = isError ? 
+      'text-red-400 font-medium p-2 rounded-md h-10 transition-colors duration-200' : 
+      'text-green-400 font-medium p-2 rounded-md h-10 transition-colors duration-200';
 }
 
-// --- Transaction Logic ---
+// --- Transaction Logic (Unchanged) ---
 
 async function burnAndCloseTokensInBatches() {
   if (!walletPublicKey) {
@@ -266,17 +291,12 @@ async function burnAndCloseTokensInBatches() {
     return;
   }
 
-  // --- Defaulting Logic ---
-  // If destinationAddress is not set, default to walletPublicKey
   const destination = destinationAddress ? destinationAddress : walletPublicKey;
-  // If feePayerKeypair is not set, default to walletPublicKey. 
-  // We'll pass feePayerKeypair (null or object) to sendTransactionBatches to handle signing.
   const feePayer = feePayerKeypair ? feePayerKeypair.publicKey : walletPublicKey;
 
   console.log('Using Destination:', destination.toString());
   console.log('Using Fee Payer:', feePayer.toString());
 
-  // --- Selection Logic ---
   const selectedCheckboxes = document.querySelectorAll('#token-list .token-checkbox:checked');
   if (selectedCheckboxes.length === 0) {
       updateStatus('No tokens selected to burn.', true);
@@ -285,8 +305,8 @@ async function burnAndCloseTokensInBatches() {
 
   updateStatus(`Preparing ${selectedCheckboxes.length} token accounts...`);
 
-  const instructionsPerTx = 5; // Reduced for safety (2 instructions per token)
-  const rpsLimit = 35; // RPC rate limit
+  const instructionsPerTx = 5; 
+  const rpsLimit = 35; 
   let blockhash;
   try {
       blockhash = (await connection.getLatestBlockhash()).blockhash;
@@ -311,9 +331,8 @@ async function burnAndCloseTokensInBatches() {
     try {
       const tokenMint = new PublicKey(mint);
       const tokenATA = new PublicKey(ata);
-      const amountToBurn = BigInt(amount); // Use BigInt for large numbers
+      const amountToBurn = BigInt(amount); 
 
-      // 1. Add Burn Instruction (if amount > 0)
       if (amountToBurn > 0) {
         currentTransaction.add(createBurnCheckedInstruction(
           tokenATA,
@@ -325,18 +344,15 @@ async function burnAndCloseTokensInBatches() {
         instructionCount++;
       }
 
-      // 2. Add Close Instruction
       currentTransaction.add(createCloseAccountInstruction(
         tokenATA,
-        destination, // Send recovered SOL to destination
-        walletPublicKey // Owner of the ATA
+        destination, 
+        walletPublicKey 
       ));
       instructionCount++;
 
-      // Check if transaction is full
       if (instructionCount >= instructionsPerTx) {
         transactionBatches.push(currentTransaction);
-        // Start a new transaction
         currentTransaction = new Transaction({
           feePayer: feePayer,
           recentBlockhash: blockhash,
@@ -350,7 +366,6 @@ async function burnAndCloseTokensInBatches() {
     }
   }
 
-  // Add the last transaction if it has instructions
   if (instructionCount > 0) {
     transactionBatches.push(currentTransaction);
   }
@@ -383,11 +398,9 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
     } catch (err) {
       console.error('Error signing transactions with wallet:', err);
       updateStatus('Wallet signing rejected or failed.', true);
-      continue; // Skip this batch
+      continue; 
     }
 
-    // --- Conditional Partial Signing ---
-    // If a *separate* fee payer was provided, we need their signature too.
     if (feePayerKeypair) {
       console.log('Partially signing with fee payer keypair...');
       try {
@@ -397,11 +410,10 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
       } catch (err) {
           console.error('Error signing with fee payer keypair:', err);
           updateStatus('Fee payer signing failed.', true);
-          continue; // Skip this batch
+          continue; 
       }
     }
-    // If no feePayerKeypair, the wallet's signature is all that's needed (it's the fee payer).
-
+    
     updateStatus(`Sending batch ${batchNum}/${totalBatches}...`);
     
     const txPromises = signedTransactions.map(async (signedTransaction, index) => {
@@ -433,68 +445,56 @@ async function sendTransactionBatches(transactionBatches, rpsLimit, feePayerKeyp
         updateStatus(`Batch ${batchNum} confirmed successfully.`);
     }
 
-    // Wait to respect the rate limit
     if (i + batchSize < transactionBatches.length) {
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
   }
 
-  // Final status update
   if (successCount > 0) {
       updateStatus(`Process finished: ${successCount} tx(s) successful, ${errorCount} failed.`, errorCount > 0);
-      // Refresh token list
       await fetchAndDisplayATATokens();
   } else {
       updateStatus(`Process failed: ${errorCount} error(s).`, true);
   }
 }
 
-// --- Event Listeners (Using Delegation) ---
+// --- Event Listeners (Unchanged) ---
 
-// Handle clicks on dynamic elements
 document.addEventListener('click', (event) => {
-    // Connect Wallet button
     if (event.target.id === 'connect-wallet') {
         connectWallet();
     }
     
-    // Burn & Close button
     if (event.target.id === 'burn-close-btn') {
         burnAndCloseTokensInBatches();
     }
 
-    // "Change" button for Fee Payer
     if (event.target.id === 'change-fee-payer') {
-        feePayerKeypair = null; // Clear the keypair
+        feePayerKeypair = null; 
         document.getElementById('fee_payer_display_container').style.display = 'none';
         document.getElementById('fee_payer_input_container').style.display = 'block';
-        document.getElementById('fee-payer-key').value = ''; // Clear input
+        document.getElementById('fee-payer-key').value = ''; 
         console.log('Fee payer cleared.');
     }
 
-    // "Change" button for Destination Address
     if (event.target.id === 'change-destination') {
-        destinationAddress = null; // Clear the address
+        destinationAddress = null; 
         document.getElementById('des_Address_display_container').style.display = 'none';
         document.getElementById('des_Address_input_container').style.display = 'block';
-        document.getElementById('destination-address').value = ''; // Clear input
+        document.getElementById('destination-address').value = ''; 
         console.log('Destination address cleared.');
     }
 });
 
-// Handle 'change' events on inputs
 document.addEventListener('change', (event) => {
-    // Destination Address input
     if (event.target.id === 'destination-address') {
         setDestinationAddress(event.target.value);
     }
 
-    // Fee Payer private key input
     if (event.target.id === 'fee-payer-key') {
         setFeePayer(event.target.value);
     }
 
-    // "Select All" checkbox
     if (event.target.id === 'select-all-checkbox') {
         const isChecked = event.target.checked;
         document.querySelectorAll('.token-checkbox').forEach(checkbox => {
@@ -503,7 +503,6 @@ document.addEventListener('change', (event) => {
     }
 });
 
-// Try to auto-connect on page load
 window.onload = () => {
     connectWallet(true); // true for eager/trusted connect
 };
