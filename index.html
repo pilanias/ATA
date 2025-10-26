@@ -14,30 +14,23 @@
   
   <style>
     :root {
-      --bg-primary: #0A0A10;    /* Very dark background */
-      --bg-secondary: #141418;  /* Card background */
-      --border-color: #282830; /* Subtle borders */
-      --text-primary: #F0F0F5;   /* Main text */
-      --text-secondary: #888890;/* Muted text */
+      --bg-primary: #0A0A10;    
+      --bg-secondary: #141418;  
+      --border-color: #282830; 
+      --text-primary: #F0F0F5;   
+      --text-secondary: #888890;
       --accent: #00E0FF;        /* Electric Cyan */
       --accent-hover: #33E8FF;
-      --error: #FF4057;         /* Bright red for errors */
+      --highlight: #FF00E0;     /* Vibrant Magenta (for CTA) */
+      --highlight-hover: #FF33E8;
+      --error: #FF4057;         /* Bright red for errors/change */
     }
     
-    /* Custom scrollbar for a modern feel (optional) */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: var(--bg-primary);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--text-secondary);
-    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
   </style>
   </head>
 
@@ -47,7 +40,7 @@
     <div class="w-full max-w-6xl mx-auto" id="pubkey">
       <div class="w-full relative" id="assets">
         
-        <div class="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 sm:p-6 mb-6 w-full">
+        <div class="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 sm:p-6 mb-10 w-full">
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
@@ -64,10 +57,10 @@
               <span id="fee_payer_container" class="w-full">
                 <div id="fee_payer_input_container">
                   <input type="password"
-                    class="bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-full p-2.5 placeholder:text-[var(--text-secondary)]"
+                    class="bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-base rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-full p-4 placeholder:text-[var(--text-secondary)]"
                     id="fee-payer-key" placeholder="Fee payer private key (Optional)">
                 </div>
-                <div id="fee_payer_display_container" class="items-center" style="display: none; height: 42px;">
+                <div id="fee_payer_display_container" class="items-center" style="display: none;">
                   </div>
               </span>
             </div>
@@ -76,10 +69,10 @@
               <span id="des_Address_container" class="w-full">
                 <div id="des_Address_input_container">
                   <input type="text"
-                    class="bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-full p-2.5 placeholder:text-[var(--text-secondary)]"
+                    class="bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] text-base rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-full p-4 placeholder:text-[var(--text-secondary)]"
                     id="destination-address" placeholder="Destination Address (Optional)">
                 </div>
-                <div id="des_Address_display_container" class="items-center" style="display: none; height: 42px;">
+                <div id="des_Address_display_container" class="items-center" style="display: none;">
                   </div>
               </span>
             </div>
@@ -104,7 +97,7 @@
                 </div>
                 <div class="w-full sm:w-auto">
                   <button type="button"
-                    class="w-full sm:w-auto bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-black font-semibold py-2 px-5 rounded-lg transition-colors duration-200"
+                    class="w-full sm:w-auto bg-gradient-to-r from-[var(--highlight)] to-[var(--accent)] text-black font-semibold py-2.5 px-6 rounded-lg transition-all duration-300 hover:from-[var(--highlight-hover)] hover:to-[var(--accent-hover)] shadow-lg shadow-[var(--highlight)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/30"
                     id="burn-close-btn">
                     Burn & Close Selected
                   </button>
